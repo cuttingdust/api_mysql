@@ -1,0 +1,193 @@
+# Mysql 范围查询优化
+## 一、问题来源
+MySQL root@localhost:school> create index age_name_sex on student(age, name, sex);
+Query OK, 0 rows affected
+Time: 0.031s
+MySQL root@localhost:school> EXPLAIN SELECT s.* FROM student s
+                          -> INNER JOIN (
+                          ->     SELECT uid FROM student WHERE age < 20 ORDER BY name
+                          -> ) AS tmp ON s.uid = tmp.uid;
++----+-------------+---------+------------+--------+----------------------+--------------+---------+--------------------+------+----------+--------------------------+
+| id | select_type | table   | partitions | type   | possible_keys        | key          | key_len | ref                | rows | filtered | Extra                    |
++----+-------------+---------+------------+--------+----------------------+--------------+---------+--------------------+------+----------+--------------------------+
+| 1  | SIMPLE      | student | <null>     | range  | PRIMARY,age_name_sex | age_name_sex | 4       | <null>             | 2    | 100.0    | Using where; Using index |
+| 1  | SIMPLE      | s       | <null>     | eq_ref | PRIMARY              | PRIMARY      | 4       | school.student.uid | 1    | 100.0    | <null>                   |
++----+-------------+---------+------------+--------+----------------------+--------------+---------+--------------------+------+----------+--------------------------+
+
+2 rows in set
+Time: 0.002s
+MySQL root@localhost:school> select * from student where age < 20  as tmp order by name;
+(1064, "You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'as tmp order by name' at line 1")
+MySQL root@localhost:school> select * from student where age < 20 order by name;
++-----+----------+-----+-----+
+| uid | name     | age | sex |
++-----+----------+-----+-----+
+| 4   | liufeng  | 19  | M   |
+| 1   | zhangsan | 18  | M   |
++-----+----------+-----+-----+
+
+2 rows in set
+Time: 0.002s
+MySQL root@localhost:school> explain select * from student where age < 20 order by name;
++----+-------------+---------+------------+-------+---------------+--------------+---------+--------+------+----------+------------------------------------------+
+| id | select_type | table   | partitions | type  | possible_keys | key          | key_len | ref    | rows | filtered | Extra                                    |
++----+-------------+---------+------------+-------+---------------+--------------+---------+--------+------+----------+------------------------------------------+
+| 1  | SIMPLE      | student | <null>     | range | age_name_sex  | age_name_sex | 4       | <null> | 2    | 100.0    | Using where; Using index; Using filesort |
++----+-------------+---------+------------+-------+---------------+--------------+---------+--------+------+----------+------------------------------------------+
+
+1 row in set
+Time: 0.002s
+MySQL root@localhost:school> EXPLAIN SELECT s.* FROM student s
+                          -> INNER JOIN (
+                          ->     SELECT uid FROM student WHERE age < 20 ORDER BY name
+                          -> ) AS tmp ON s.uid = tmp.uid;
++----+-------------+---------+------------+--------+----------------------+--------------+---------+--------------------+------+----------+--------------------------+
+| id | select_type | table   | partitions | type   | possible_keys        | key          | key_len | ref                | rows | filtered | Extra                    |
++----+-------------+---------+------------+--------+----------------------+--------------+---------+--------------------+------+----------+--------------------------+
+| 1  | SIMPLE      | student | <null>     | range  | PRIMARY,age_name_sex | age_name_sex | 4       | <null>             | 2    | 100.0    | Using where; Using index |
+| 1  | SIMPLE      | s       | <null>     | eq_ref | PRIMARY              | PRIMARY      | 4       | school.student.uid | 1    | 100.0    | <null>                   |
++----+-------------+---------+------------+--------+----------------------+--------------+---------+--------------------+------+----------+--------------------------+
+
+2 rows in set
+Time: 0.003s
+MySQL root@localhost:school>
+
+
+这种方式 和 临时表的方式 是不是一样的？
+
+## 很好的问题！这种关联查询的方式和临时表方式并不完全一样，有重要区别：
+
+### 执行计划分析对比
+当前关联查询的执行计划：
+text
+1. 子查询: student表 → range扫描 → 使用age_name_sex索引 → 直接按name排序 → 输出uid
+2. 主查询: s表 → eq_ref主键关联 → 通过uid快速获取完整数据
+
+如果是临时表方式：
+sql
+-- 显式临时表方式（不同的执行计划）
+CREATE TEMPORARY TABLE tmp_student AS 
+SELECT uid FROM student WHERE age < 20 ORDER BY name;
+
+SELECT s.* FROM student s
+INNER JOIN tmp_student tmp ON s.uid = tmp.uid;
+## 关键区别 ******
+1. 执行引擎的处理方式不同
+你的关联查询：
+
+	MySQL 优化器会将子查询合并到主查询中
+
+	实际上是一个两阶段的单次查询
+
+	子查询结果不会物化为临时表
+
+显式临时表：
+
+	真正创建磁盘/内存临时表
+
+	涉及临时表的创建、插入数据、关联查询
+
+	是两次独立的查询操作
+
+2. 性能差异
+你的方式（优）：
+
+text
+子查询结果 → 内存中的结果集 → 直接用于关联
+临时表方式（劣）：
+
+text
+子查询结果 → 写入临时表 → 从临时表读取 → 用于关联
+3. 验证是否使用临时表
+sql
+-- 查看当前查询是否使用临时表
+EXPLAIN FORMAT=JSON 
+SELECT s.* FROM student s
+INNER JOIN (
+    SELECT uid FROM student WHERE age < 20 ORDER BY name
+) AS tmp ON s.uid = tmp.uid;
+
+-- 在输出中搜索 "temporary_table"，应该是 false
+
+实际测试对比
+测试1：你的关联查询
+sql
+EXPLAIN 
+SELECT s.* FROM student s
+INNER JOIN (
+    SELECT uid FROM student WHERE age < 20 ORDER BY name
+) AS tmp ON s.uid = tmp.uid;
+-- 结果: 没有 "Using temporary"
+测试2：显式临时表查询
+sql
+EXPLAIN
+SELECT s.* FROM student s
+INNER JOIN (
+    SELECT uid FROM student WHERE age < 20 
+) AS tmp ON s.uid = tmp.uid
+ORDER BY tmp.name;  -- 注意：这里ORDER BY在外部
+-- 结果: 可能有 "Using temporary; Using filesort"
+测试3：真正的临时表方式
+sql
+-- 这会真正创建临时表
+CREATE TEMPORARY TABLE tmp_ids AS 
+SELECT uid FROM student WHERE age < 20 ORDER BY name;
+
+EXPLAIN SELECT s.* FROM student s
+INNER JOIN tmp_ids tmp ON s.uid = tmp.uid;
+-- 结果: 使用临时表，性能较差
+MySQL 的优化策略
+MySQL 对派生表（子查询）有几种处理策略：
+
+1. 派生表合并（你的情况）
+sql
+-- MySQL 会将这个查询重写为：
+SELECT s.* FROM student s
+WHERE s.uid IN (
+    SELECT uid FROM student WHERE age < 20 ORDER BY name
+)
+-- 但保持排序语义
+2. 派生表物化（使用临时表）
+sql
+-- 当子查询复杂时，MySQL 可能选择：
+-- 1. 创建临时表存储子查询结果
+-- 2. 对临时表排序
+-- 3. 执行关联查询
+3. 半连接优化
+sql
+-- 对于IN子查询，可能使用半连接优化
+-- 避免重复记录，提高性能
+验证优化策略
+sql
+-- 查看优化器是否合并了派生表
+EXPLAIN FORMAT=JSON 
+SELECT s.* FROM student s
+INNER JOIN (
+    SELECT uid FROM student WHERE age < 20 ORDER BY name
+) AS tmp ON s.uid = tmp.uid;
+
+-- 在输出中查找：
+-- "materialized_from_subquery": false  (表示没有物化)
+-- "attached_condition": 查看合并后的条件
+总结
+你的关联查询方式：
+
+✅ 不是临时表方式
+
+✅ MySQL 优化器进行了派生表合并
+
+✅ 执行效率高于真正的临时表方式
+
+✅ 避免了临时表的 IO 开销
+
+✅ 是最优的执行方式
+
+临时表方式：
+
+❌ 真正的磁盘/内存临时表
+
+❌ 额外的创建和写入开销
+
+❌ 性能较差
+
+所以你的写法是正确且高效的，MySQL 会智能地优化这种关联查询，不会真正创建临时表。
