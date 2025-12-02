@@ -18,6 +18,9 @@
 #include <string>
 #include <vector>
 
+/// TODO 
+/// 1. select join 查询(左右内)
+/// 2. create index 功能 
 enum LX_DATA_TYPE
 {
     LXD_TYPE_DECIMAL,
