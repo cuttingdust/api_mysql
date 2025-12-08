@@ -21,6 +21,11 @@
 /// TODO 
 /// 1. select join 查询(左右内)
 /// 2. create index 功能 
+/// 3. 查询隔离级别
+/// 4. 设置隔离级别
+	/// * READ-UNCOMMITTED /// 允许脏读  
+	/// * READ-COMMITTED /// 解决脏读 允许不可重复读
+	/// * REPEATEDTABLE-READ /// 解决不可重复读 /// 默认 事务隔离 /// 但是还是会幻读
 enum LX_DATA_TYPE
 {
     LXD_TYPE_DECIMAL,
