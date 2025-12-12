@@ -26,6 +26,8 @@
 	/// * READ-UNCOMMITTED /// 允许脏读  
 	/// * READ-COMMITTED /// 解决脏读 允许不可重复读
 	/// * REPEATEDTABLE-READ /// 解决不可重复读 /// 默认 事务隔离 /// 但是还是会幻读
+	/// * SERIALIZE
+/// 5. 排他锁（index-行锁; no index 表锁）SERIALIZE底层原理就是排他和共享的使用  SS 共享 SX XX 互斥
 enum LX_DATA_TYPE
 {
     LXD_TYPE_DECIMAL,
