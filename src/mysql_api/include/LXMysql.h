@@ -28,6 +28,8 @@
 	/// * REPEATEDTABLE-READ /// 解决不可重复读 /// 默认 事务隔离 /// 但是还是会幻读
 	/// * SERIALIZE
 /// 5. 排他锁（index-行锁; no index 表锁）SERIALIZE底层原理就是排他和共享的使用  SS 共享 SX XX 互斥
+/// next_key: gap_lock + record_lock  (串行化使用的时候留意间隙锁)
+
 enum LX_DATA_TYPE
 {
     LXD_TYPE_DECIMAL,
