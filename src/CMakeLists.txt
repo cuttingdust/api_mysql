@@ -1,8 +1,14 @@
 cmake_minimum_required(VERSION 3.12)
 
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+include(IgnoreCondaPaths)
+ignore_conda_paths()
+
+
 # 使用 vcpkg 工具链文件 Warning  工具连设置必须是在project 前面
 set(CMAKE_TOOLCHAIN_FILE $ENV{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake CACHE STRING "Vcpkg toolchain file")
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
+
 
 project(mysql_api)
 
@@ -18,6 +24,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 set(CMAKE_BUILD_TYPE Debug) 
 
+
 # QT
 # UIC 的自控一下会生成大量的配置文件 和一个ui 和 四个 ui_*.h的情况 ，所以我们采用老办法
 set(CMAKE_AUTOUIC OFF)
@@ -29,6 +36,7 @@ set(CMAKE_AUTORCC OFF)
 # set(AUTORCC_EXECUTABLE "$ENV{QTDIR}/bin/rcc.exe")
 
 ############ 查找 vcpkg 安装的库################
+
 # OpenMP
 find_package(OpenMP)
 message("OpenMP_FOUND = ${OpenMP_FOUND}")
@@ -38,6 +46,15 @@ if(OpenMP_FOUND)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
 endif()
+#==================================================================================#
+include(FindMySQL)
+include(PrintPackage)
+
+
+find_package_and_print(MySQL COMPONENTS lib TARGETS MySQL::MySQL)
+find_package_and_print(fmt TARGETS fmt::fmt)
+find_package_and_print(utf8cpp TARGETS utf8cpp::utf8cpp)
+
 
 # 外部依赖项
 set(DPS_INCLUDES)
@@ -57,7 +74,6 @@ if(MSVC)
 	SET(CMAKE_EXE_LINKER_FLAGS /NODEFAULTLIB:"libcmt.lib;libc.lib")
 endif()
 
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 include(CommonTools)
 
 add_subdirectory(mysql_hello_world)
@@ -76,6 +92,7 @@ add_subdirectory(agent)
 add_subdirectory(center)
 add_subdirectory(client)
 add_subdirectory(mysql_pool_test)
+add_subdirectory(mysql_trinitycore)
 
 
 # 拷贝asset目录到输出目录
