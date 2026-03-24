@@ -37,7 +37,8 @@ public:
 
     // Register a database to the loader (lazy implemented)
     template <class T>
-    DatabaseLoader& AddDatabase(DatabaseWorkerPool<T>& pool, std::string const& name);
+    DatabaseLoader& AddDatabase(DatabaseWorkerPool<T>& pool, std::string const& dbString, uint8 asyncThreads = 8,
+                                uint8 syncThread = 2);
 
     // Load all databases
     bool Load();

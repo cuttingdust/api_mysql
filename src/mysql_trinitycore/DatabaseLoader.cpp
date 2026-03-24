@@ -26,22 +26,23 @@ DatabaseLoader::DatabaseLoader(std::string const& logger, uint32 const defaultUp
 }
 
 template <class T>
-DatabaseLoader& DatabaseLoader::AddDatabase(DatabaseWorkerPool<T>& pool, std::string const& dbString)
+DatabaseLoader& DatabaseLoader::AddDatabase(DatabaseWorkerPool<T>& pool, std::string const& dbString,
+                                            uint8 asyncThreads, uint8 syncThreads)
 {
     _open.push(
-            [this, dbString, &pool]() -> bool
+            [this, dbString, &pool, asyncThreads, syncThreads]() -> bool
             {
-                pool.SetConnectionInfo(dbString, 8, 12);
+                pool.SetConnectionInfo(dbString, asyncThreads, syncThreads);
                 if (uint32 error = pool.Open())
                 {
                     // If the error wasn't handled quit
                     if (error)
                     {
                         TC_LOG_ERROR("sql.driver",
-                        "\nDatabasePool {} NOT opened. There were errors opening the MySQL connections. "
-                        "Check your SQLDriverLogFile "
-                        "for specific errors. Read wiki at https://www.trinitycore.info",
-                        dbString.c_str());
+                                     "\nDatabasePool {} NOT opened. There were errors opening the MySQL connections. "
+                                     "Check your SQLDriverLogFile "
+                                     "for specific errors. Read wiki at https://www.trinitycore.info",
+                                     dbString.c_str());
 
                         return false;
                     }
@@ -58,7 +59,7 @@ DatabaseLoader& DatabaseLoader::AddDatabase(DatabaseWorkerPool<T>& pool, std::st
                 if (!pool.PrepareStatements())
                 {
                     TC_LOG_ERROR(_logger, "Could not prepare statements of the {} database, see log for details.",
-                    dbString.c_str());
+                                 dbString.c_str());
                     return false;
                 }
                 return true;
@@ -112,4 +113,4 @@ bool DatabaseLoader::Process(std::queue<Predicate>& queue)
 }
 
 template TC_DATABASE_API DatabaseLoader& DatabaseLoader::AddDatabase<SakilaDatabaseConnection>(
-        DatabaseWorkerPool<SakilaDatabaseConnection>&, std::string const&);
+        DatabaseWorkerPool<SakilaDatabaseConnection>&, std::string const&, uint8, uint8);
