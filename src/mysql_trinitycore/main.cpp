@@ -23,123 +23,119 @@ int main(int argc, char *argv[])
     }
     TC_LOG_INFO("", "SakilaDatabase connect success");
 
-    {
-        // SakilaDatabase.DirectExecute("INSERT INTO actor (first_name, last_name) VALUES ('mark', '0voice');");
-        auto result = SakilaDatabase.Query("SELECT actor_id, first_name, last_name, last_update FROM actor "
-                                           "WHERE actor_id BETWEEN 201 AND 303;");
-        if (!result)
-        {
-            TC_LOG_ERROR("", "Query returned no results");
-        }
-        do
-        {
-            Field *fields = result->Fetch(); /// 获取当前行的字段
-            TC_LOG_INFO("", "actor_id: {}, first_name: {}, last_name: {}, last_update: {}", fields[0].GetUInt32(),
-                        fields[1].GetString().c_str(), fields[2].GetString().c_str(), fields[3].GetString());
-        }
-        while (result->NextRow());
-    }
-
-
-    {
-        auto *stmt = SakilaDatabase.GetPreparedStatement(SakilaDatabaseConnection::Statements::SAKILA_SEL_ACTOR_INFO);
-        stmt->setUInt32(0, 1); /// 设置参数 actor_id = 1
-        auto result = SakilaDatabase.Query(stmt);
-        if (!result)
-        {
-            TC_LOG_ERROR("", "Query returned no results");
-        }
-        do
-        {
-            Field *fields = result->Fetch(); /// 获取当前行的字段
-            TC_LOG_INFO("", "actor_id: {}, first_name: {}, last_name: {}, last_update: {}", fields[0].GetUInt32(),
-                        fields[1].GetString().c_str(), fields[2].GetString().c_str(),
-                        Trinity::DateFormat(fields[3].GetDate()));
-        }
-        while (result->NextRow());
-    }
+    // {
+    //     // SakilaDatabase.DirectExecute("INSERT INTO actor (first_name, last_name) VALUES ('mark', '0voice');");
+    //     auto result = SakilaDatabase.Query("SELECT actor_id, first_name, last_name, last_update FROM actor "
+    //                                        "WHERE actor_id BETWEEN 201 AND 303;");
+    //     if (!result)
+    //     {
+    //         TC_LOG_ERROR("", "Query returned no results");
+    //     }
+    //     do
+    //     {
+    //         Field *fields = result->Fetch(); /// 获取当前行的字段
+    //         TC_LOG_INFO("", "actor_id: {}, first_name: {}, last_name: {}, last_update: {}", fields[0].GetUInt32(),
+    //                     fields[1].GetString().c_str(), fields[2].GetString().c_str(), fields[3].GetString());
+    //     }
+    //     while (result->NextRow());
+    // }
+    //
+    //
+    // {
+    //     auto *stmt = SakilaDatabase.GetPreparedStatement(SakilaDatabaseConnection::Statements::SAKILA_SEL_ACTOR_INFO);
+    //     stmt->setUInt32(0, 1); /// 设置参数 actor_id = 1
+    //     auto result = SakilaDatabase.Query(stmt);
+    //     if (!result)
+    //     {
+    //         TC_LOG_ERROR("", "Query returned no results");
+    //     }
+    //     do
+    //     {
+    //         Field *fields = result->Fetch(); /// 获取当前行的字段
+    //         TC_LOG_INFO("", "actor_id: {}, first_name: {}, last_name: {}, last_update: {}", fields[0].GetUInt32(),
+    //                     fields[1].GetString().c_str(), fields[2].GetString().c_str(),
+    //                     Trinity::DateFormat(fields[3].GetDate()));
+    //     }
+    //     while (result->NextRow());
+    // }
 
     //////////////////////////////////////////////////////////////////
     {
         AsyncCallbackProcessor<QueryCallback> processor;
 
-        auto *stmt = SakilaDatabase.GetPreparedStatement(SAKILA_SEL_ACTOR_INFO_ASYNC);
-        stmt->setUInt32(0, 2); /// 设置参数 actor_id = 2
-        processor.AddCallback(SakilaDatabase.AsyncQuery(stmt).WithPreparedCallback(
-                [](PreparedQueryResult result)
-                {
-                    Field *fields = result->Fetch(); /// 获取当前行的字段
-                    TC_LOG_INFO("", "actor_id: {}, first_name: {}, last_name: {}, last_update: {}",
-                                fields[0].GetUInt32(), fields[1].GetString().c_str(), fields[2].GetString().c_str(),
-                                Trinity::DateFormat(fields[3].GetDate()));
-                }));
-
-        auto *stmt2 = SakilaDatabase.GetPreparedStatement(SAKILA_SEL_ACTOR_INFO_ASYNC);
-        stmt2->setUInt32(0, 3); /// 设置参数 actor_id = 3
-        processor.AddCallback(SakilaDatabase.AsyncQuery(stmt2).WithPreparedCallback(
-                [](PreparedQueryResult result)
-                {
-                    Field *fields = result->Fetch(); /// 获取当前行的字段
-                    TC_LOG_INFO("", "actor_id: {}, first_name: {}, last_name: {}, last_update: {}",
-                                fields[0].GetUInt32(), fields[1].GetString().c_str(), fields[2].GetString().c_str(),
-                                Trinity::DateFormat(fields[3].GetDate()));
-                }));
-
-        auto *stmt3 = SakilaDatabase.GetPreparedStatement(SAKILA_SEL_ACTOR_INFO_ASYNC);
-        stmt3->setUInt32(0, 4); /// 设置参数 actor_id = 4
-        processor.AddCallback(SakilaDatabase.AsyncQuery(stmt3).WithPreparedCallback(
-                [](PreparedQueryResult result)
-                {
-                    Field *fields = result->Fetch(); /// 获取当前行的字段
-                    TC_LOG_INFO("", "actor_id: {}, first_name: {}, last_name: {}, last_update: {}",
-                                fields[0].GetUInt32(), fields[1].GetString().c_str(), fields[2].GetString().c_str(),
-                                Trinity::DateFormat(fields[3].GetDate()));
-                }));
+        // auto *stmt = SakilaDatabase.GetPreparedStatement(SAKILA_SEL_ACTOR_INFO_ASYNC);
+        // stmt->setUInt32(0, 2); /// 设置参数 actor_id = 2
+        // processor.AddCallback(SakilaDatabase.AsyncQuery(stmt).WithPreparedCallback(
+        //         [](PreparedQueryResult result)
+        //         {
+        //             Field *fields = result->Fetch(); /// 获取当前行的字段
+        //             TC_LOG_INFO("", "actor_id: {}, first_name: {}, last_name: {}, last_update: {}",
+        //                         fields[0].GetUInt32(), fields[1].GetString().c_str(), fields[2].GetString().c_str(),
+        //                         Trinity::DateFormat(fields[3].GetDate()));
+        //         }));
+        //
+        // auto *stmt2 = SakilaDatabase.GetPreparedStatement(SAKILA_SEL_ACTOR_INFO_ASYNC);
+        // stmt2->setUInt32(0, 3); /// 设置参数 actor_id = 3
+        // processor.AddCallback(SakilaDatabase.AsyncQuery(stmt2).WithPreparedCallback(
+        //         [](PreparedQueryResult result)
+        //         {
+        //             Field *fields = result->Fetch(); /// 获取当前行的字段
+        //             TC_LOG_INFO("", "actor_id: {}, first_name: {}, last_name: {}, last_update: {}",
+        //                         fields[0].GetUInt32(), fields[1].GetString().c_str(), fields[2].GetString().c_str(),
+        //                         Trinity::DateFormat(fields[3].GetDate()));
+        //         }));
+        //
+        // auto *stmt3 = SakilaDatabase.GetPreparedStatement(SAKILA_SEL_ACTOR_INFO_ASYNC);
+        // stmt3->setUInt32(0, 4); /// 设置参数 actor_id = 4
+        // processor.AddCallback(SakilaDatabase.AsyncQuery(stmt3).WithPreparedCallback(
+        //         [](PreparedQueryResult result)
+        //         {
+        //             Field *fields = result->Fetch(); /// 获取当前行的字段
+        //             TC_LOG_INFO("", "actor_id: {}, first_name: {}, last_name: {}, last_update: {}",
+        //                         fields[0].GetUInt32(), fields[1].GetString().c_str(), fields[2].GetString().c_str(),
+        //                         Trinity::DateFormat(fields[3].GetDate()));
+        //         }));
 
         //////////////////////////////////////////////////////////////////
 
         auto *stmt4 = SakilaDatabase.GetPreparedStatement(SAKILA_SEL_ACTOR_INFO_ASYNC);
-        stmt4->setUInt32(0, 5); /// 设置参数 actor_id = 5
+        stmt4->setUInt32(0, 5);
+
         auto *stmt5 = SakilaDatabase.GetPreparedStatement(SAKILA_SEL_ACTOR_INFO_ASYNC);
-        stmt5->setUInt32(0, 6); /// 设置参数 actor_id = 6
+        stmt5->setUInt32(0, 6);
 
         auto *stmt6 = SakilaDatabase.GetPreparedStatement(SAKILA_SEL_ACTOR_INFO_ASYNC);
-        stmt6->setUInt32(0, 7); /// 设置参数 actor_id = 7
+        stmt6->setUInt32(0, 7);
 
-        processor
-                .AddCallback(
-                        SakilaDatabase.AsyncQuery(stmt4)
-                                .WithChainingPreparedCallback(
-                                        [&](QueryCallback &callback, PreparedQueryResult result)
-                                        {
-                                            Field *fields = result->Fetch(); /// 获取当前行的字段
-                                            TC_LOG_INFO("",
-                                                        "actor_id: {}, first_name: {}, last_name: {}, last_update: {}",
-                                                        fields[0].GetUInt16(), fields[1].GetString().c_str(),
-                                                        fields[2].GetString().c_str(),
-                                                        Trinity::DateFormat(fields[3].GetDate()));
+        auto *stmt7 = SakilaDatabase.GetPreparedStatement(SAKILA_SEL_ACTOR_INFO_ASYNC);
+        stmt7->setUInt32(0, 8);
 
+        processor.AddCallback(
+                SakilaDatabase.AsyncQuery(stmt4)
+                        .WithChainingPreparedCallback(
+                                [stmt5](QueryCallback &callback, PreparedQueryResult result)
+                                {
+                                    std::cout << "555555555555555555555555" << std::endl;
+                                    Field *fields = result->Fetch();
+                                    TC_LOG_INFO("", "actor_id: {}", fields[0].GetUInt16());
 
-                                            callback.SetNextQuery(SakilaDatabase.AsyncQuery(stmt5));
-                                        })
-                                .WithChainingPreparedCallback(
-                                        [](QueryCallback &callback, PreparedQueryResult result)
-                                        {
-                                            Field *fields = result->Fetch(); /// 获取当前行的字段
-                                            TC_LOG_INFO("",
-                                                        "actor_id: {}, first_name: {}, last_name: {}, last_update: {}",
-                                                        fields[0].GetUInt16(), fields[1].GetString().c_str(),
-                                                        fields[2].GetString().c_str(),
-                                                        Trinity::DateFormat(fields[3].GetDate()));
-                                        }))
-                .SetNextQuery(SakilaDatabase.AsyncQuery(stmt6).WithPreparedCallback(
-                        [](PreparedQueryResult result)
-                        {
-                            Field *fields = result->Fetch(); /// 获取当前行的字段
-                            TC_LOG_INFO("", "actor_id: {}, first_name: {}, last_name: {}, last_update: {}",
-                                        fields[0].GetUInt16(), fields[1].GetString().c_str(),
-                                        fields[2].GetString().c_str(), Trinity::DateFormat(fields[3].GetDate()));
-                        }));
+                                    callback.SetNextQuery(SakilaDatabase.AsyncQuery(stmt5));
+                                })
+                        .WithChainingPreparedCallback(
+                                [&](QueryCallback &callback2, PreparedQueryResult result2)
+                                {
+                                    std::cout << "666666666666666666666666666666" << std::endl;
+                                    Field *fields2 = result2->Fetch();
+                                    TC_LOG_INFO("", "actor_id: {}", fields2[0].GetUInt16());
+
+                                    processor.AddCallback(SakilaDatabase.AsyncQuery(stmt6).WithPreparedCallback(
+                                            [](PreparedQueryResult result3)
+                                            {
+                                                std::cout << "77777777777777777777777777777" << std::endl;
+                                                Field *fields3 = result3->Fetch();
+                                                TC_LOG_INFO("", "actor_id: {}", fields3[0].GetUInt16());
+                                            }));
+                                }));
 
         while (true)
         {
