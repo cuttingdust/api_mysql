@@ -6,6 +6,7 @@
 
 #include "MySQLThreading.h"
 #include "AsyncCallbackProcessor.h"
+#include "QueryHolder.h"
 
 #include <iostream>
 
@@ -39,8 +40,89 @@ int main(int argc, char *argv[])
     //     }
     //     while (result->NextRow());
     // }
-    //
-    //
+
+    {
+        class ActorInfoHolder : public SQLQueryHolder<SakilaDatabaseConnection>
+        {
+        public:
+            enum ACTOR_INFO_IDX : uint8
+            {
+                AI_1,
+                AI_3,
+                AI_5,
+                AI_MAX
+            };
+
+        public:
+            ActorInfoHolder()
+            {
+                SetSize(AI_MAX);
+                auto stmt8 = SakilaDatabase.GetPreparedStatement(SAKILA_SEL_ACTOR_INFO_ASYNC);
+                stmt8->setUInt32(0, 9);
+                SetPreparedQuery(AI_1, stmt8);
+
+                auto stmt9 = SakilaDatabase.GetPreparedStatement(SAKILA_SEL_ACTOR_INFO_ASYNC);
+                stmt9->setUInt32(0, 10);
+                SetPreparedQuery(AI_3, stmt9);
+
+                auto stmt10 = SakilaDatabase.GetPreparedStatement(SAKILA_SEL_ACTOR_INFO_ASYNC);
+                stmt10->setUInt32(0, 11);
+                SetPreparedQuery(AI_5, stmt10);
+            }
+        };
+
+        AsyncCallbackProcessor<SQLQueryHolderCallback> processor;
+        auto                                           holder = std::make_shared<ActorInfoHolder>();
+        processor.AddCallback(SakilaDatabase.DelayQueryHolder(holder))
+                .AfterComplete(
+                        [](SQLQueryHolderBase const &hdr)
+                        {
+                            auto holder  = dynamic_cast<ActorInfoHolder const *>(&hdr);
+                            auto result1 = holder->GetPreparedResult(ActorInfoHolder::AI_1);
+                            auto result2 = holder->GetPreparedResult(ActorInfoHolder::AI_3);
+                            auto result3 = holder->GetPreparedResult(ActorInfoHolder::AI_5);
+                            if (result1)
+                            {
+                                Field *fields = result1->Fetch();
+                                TC_LOG_INFO("", "actor_id: {}, first_name: {}, last_name: {}, last_update: {}",
+                                            fields[0].GetUInt32(), fields[1].GetString().c_str(),
+                                            fields[2].GetString().c_str(), Trinity::DateFormat(fields[3].GetDate()));
+                            }
+                            else
+                            {
+                                TC_LOG_ERROR("", "Query 1 returned no results");
+                            }
+                            if (result2)
+                            {
+                                Field *fields = result2->Fetch();
+                                TC_LOG_INFO("", "actor_id: {}, first_name: {}, last_name: {}, last_update: {}",
+                                            fields[0].GetUInt32(), fields[1].GetString().c_str(),
+                                            fields[2].GetString().c_str(), Trinity::DateFormat(fields[3].GetDate()));
+                            }
+                            else
+                            {
+                                TC_LOG_ERROR("", "Query 2 returned no results");
+                            }
+                            if (result3)
+                            {
+                                Field *fields = result3->Fetch();
+                                TC_LOG_INFO("", "actor_id: {}, first_name: {}, last_name: {}, last_update: {}",
+                                            fields[0].GetUInt32(), fields[1].GetString().c_str(),
+                                            fields[2].GetString().c_str(), Trinity::DateFormat(fields[3].GetDate()));
+                            }
+                            else
+                            {
+                                TC_LOG_ERROR("", "Query 3 returned no results");
+                            }
+                        });
+
+        while (true)
+        {
+            processor.ProcessReadyCallbacks();
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        }
+    }
+
     // {
     //     auto *stmt = SakilaDatabase.GetPreparedStatement(SakilaDatabaseConnection::Statements::SAKILA_SEL_ACTOR_INFO);
     //     stmt->setUInt32(0, 1); /// 设置参数 actor_id = 1
