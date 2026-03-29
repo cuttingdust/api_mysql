@@ -42,6 +42,37 @@ int main(int argc, char *argv[])
     // }
 
     {
+        /// 事务处理只针对写操作， 拿不到操作的结果
+        auto trans = SakilaDatabase.BeginTransaction();
+        trans->Append("INSERT INTO actor (first_name, last_name) VALUES ('king', '0voice')");
+        trans->Append("INSERT INTO actor (first_name, last_name) VALUES ('darren', '0voice')");
+        trans->Append("INSERT INTO country (country) VALUES ('china')");
+        trans->Append("INSERT INTO city (city, country_id) VALUES ('chang sha', '109')");
+
+
+        AsyncCallbackProcessor<TransactionCallback> processor;
+        processor.AddCallback(SakilaDatabase.AsyncCommitTransaction(trans))
+                .AfterComplete(
+                        [](bool success)
+                        {
+                            if (success)
+                            {
+                                TC_LOG_INFO("", "transaction commit success");
+                            }
+                            else
+                            {
+                                TC_LOG_INFO("", "transaction commit failed");
+                            }
+                        });
+
+        while (true)
+        {
+            processor.ProcessReadyCallbacks();
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        }
+    }
+
+    {
         class ActorInfoHolder : public SQLQueryHolder<SakilaDatabaseConnection>
         {
         public:
